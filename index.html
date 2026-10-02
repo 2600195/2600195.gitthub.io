@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soccer Drill Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--turf:#1f4d36;--turf2:#245a3f;--chalk:#f4f7f2;--bib:#ff7a1a;--ink:#10261b;--mute:#b8d3c1}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 Barlow,system-ui,sans-serif;color:var(--chalk);background:repeating-linear-gradient(90deg,var(--turf) 0 90px,var(--turf2) 90px 180px);min-height:100vh}
+.wrap{max-width:900px;margin:0 auto;padding:26px 16px 70px}
+h1{font:700 3rem/1 "Barlow Condensed",sans-serif;margin:0 0 6px}
+.sub{color:var(--mute);margin:0 0 22px}
+.panel{border:3px solid var(--chalk);padding:18px;background:rgba(16,38,27,.55);margin-bottom:22px}
+h2{font:600 1.3rem "Barlow Condensed",sans-serif;margin:16px 0 8px}
+h2:first-child{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chip span{display:block;padding:7px 13px;border:2px solid var(--chalk);cursor:pointer;user-select:none}
+.chip input:checked+span{background:var(--bib);color:var(--ink);border-color:var(--bib);font-weight:600}
+.chip input:focus-visible+span{outline:3px solid #fff;outline-offset:2px}
+.hint{color:var(--mute);font-size:.9rem;margin:6px 0 0}
+button{font:600 1.05rem Barlow,sans-serif;padding:10px 20px;border:3px solid var(--chalk);background:var(--bib);color:var(--ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--chalk);padding:6px 12px;font-size:.95rem;border-width:2px}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.actions{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+.drill{border:3px solid var(--chalk);background:rgba(16,38,27,.7);padding:16px 18px;margin-bottom:14px}
+.drill.done{opacity:.55}
+.dh{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.dh h3{font:700 1.7rem "Barlow Condensed",sans-serif;margin:0}
+.min{font:700 1.4rem "Barlow Condensed",sans-serif;color:var(--bib)}
+.tags{color:var(--mute);font-size:.9rem;margin:2px 0 8px}
+.drill p{margin:6px 0}
+.drill b{color:var(--bib)}
+ul{margin:4px 0 8px 18px;padding:0}
+.dbtn{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+.warm{border-style:dashed}
+@media print{body{background:#fff;color:#000}.panel,.actions,.dbtn{display:none}.drill{border-color:#000;background:#fff}.min,.drill b{color:#000}.tags{color:#333}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Soccer Drill Builder</h1>
+  <p class="sub">Pick what you want to improve and get a session built around it.</p>
+
+  <section class="panel">
+    <h2>What do you want to improve?</h2>
+    <div class="chips" id="focus"></div>
+    <p class="hint">Pick as many as you like. Leave empty for a mixed session.</p>
+
+    <h2>Who is training?</h2>
+    <div class="chips" id="players"></div>
+
+    <h2>How long?</h2>
+    <div class="chips" id="time"></div>
+
+    <h2>Your level</h2>
+    <div class="chips" id="level"></div>
+
+    <h2>What do you have?</h2>
+    <div class="chips" id="gear"></div>
+    <p class="hint">Drills that need gear you don't have are left out.</p>
+
+    <div class="actions"><button id="go">Build my session</button></div>
+  </section>
+
+  <div id="out"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const FOCUS=["First touch","Passing","Dribbling","Shooting","Defending","Weak foot","Speed & agility","Stamina","Heading"];
+const LV=["Beginner","Intermediate","Advanced"];
+
+// s: skills, m: modes allowed (solo/pair/group), g: gear needed, tg: targets by level
+const D=[
+{n:"Wall Rebound Control",s:["First touch","Passing"],m:["solo"],g:["wall"],su:"Stand 3-4 m from a wall.",hw:"Pass firmly at the wall. Control the rebound with one touch to the side, then pass again. Alternate feet.",pt:["Open your hips to the ball","Cushion by pulling the foot back at contact","Eyes up between touches"],tg:["3 sets of 20 passes","3 sets of 30, only one touch to control","3 sets of 30 with a turn after every 5"]},
+{n:"Juggling Ladder",s:["First touch","Weak foot"],m:["solo"],g:[],su:"Open space, one ball.",hw:"Juggle with feet only. Start with alternating feet, then add thighs. Restart as soon as it drops and try to beat your best.",pt:["Lock the ankle, toes up","Keep each touch about knee height","Stay light on your standing foot"],tg:["Best of 5 tries, aim for 10 touches","Aim for 25 with both feet","Aim for 50, add a thigh touch every 5th"]},
+{n:"Cushion Control Pairs",s:["First touch","Passing"],m:["pair","group"],g:[],su:"Face a partner 5-8 m apart.",hw:"Partner serves low or bouncing passes. Control with inside of foot, thigh, or chest, then return it. Switch server every 20.",pt:["Move into line before it arrives","Soft surface, relaxed body","Return the pass in 2 touches max"],tg:["20 serves each, ground balls only","20 each, mix of bounce and air","20 each, one-touch return after the control"]},
+{n:"Triangle Receive and Turn",s:["First touch","Passing","Dribbling"],m:["group"],g:["cones"],su:"Three cones in a triangle, 10 m sides. One player per cone.",hw:"Pass to the next cone, receive with a back-foot turn, pass on. Switch direction every 2 minutes.",pt:["Check your shoulder before receiving","Turn with the far foot","Pass with the inside of the foot, firm"],tg:["Ground passes, 2 touches","Ground passes, 1 touch to turn","Add a defender who closes you down"]},
+{n:"Cone Gate Passing",s:["Passing"],m:["pair","group"],g:["cones"],su:"Set several 1 m gates, 10 m from your partner.",hw:"Pass through a gate to your partner. Count clean gates in 2 minutes, then swap feet.",pt:["Plant foot next to the ball, pointed at target","Lock the ankle on contact","Follow through toward the gate"],tg:["Beat 8 gates in 2 minutes","Beat 12 gates with both feet","Beat 15 with a 5 m run between each pass"]},
+{n:"Passing Square",s:["Passing","First touch"],m:["group"],g:["cones"],su:"20x20 m square, one player per corner, one ball.",hw:"Pass and follow your pass to the next corner. Change direction on a call and add a second ball when it feels easy.",pt:["Call for the ball","Show for it before it arrives","Pass to the back foot of the receiver"],tg:["One ball, two touches","One ball, one touch","Two balls at once, one touch"]},
+{n:"Long Ball Targets",s:["Passing"],m:["pair"],g:["cones"],su:"Cones 25-35 m apart, partner stands beside one.",hw:"Drive a lofted pass to land near your partner. Partner traps it and drives it back. Count balls landing within 3 m.",pt:["Strike the lower half of the ball","Lean back slightly, land on your kicking foot","Open the body and follow through high"],tg:["10 each, aim for 4 close","15 each, aim for 7 close","20 each, aim for 10 close, both feet"]},
+{n:"Cone Weave",s:["Dribbling","Speed & agility"],m:["solo","pair","group"],g:["cones"],su:"6-8 cones in a line, 1.5 m apart.",hw:"Dribble through, change direction at the end, and come back. Use inside-outside touches, then only your weaker foot.",pt:["Small touches, ball close","Head up between cones","Accelerate out of the last cone"],tg:["6 runs, under control","8 runs, beat 12 seconds per run","10 runs, add a feint at every cone"]},
+{n:"Close Control Box",s:["Dribbling","First touch","Weak foot"],m:["solo","pair","group"],g:["cones"],su:"10x10 m box with cones.",hw:"Dribble inside the box for 1 minute using sole rolls, inside-outside, and pull-backs. Rest 30 seconds. Repeat.",pt:["Keep the ball within a stride","Change speed and direction often","Use both feet equally"],tg:["4 rounds, any touches","5 rounds, only soles and insides","6 rounds, add a second player as passive defender"]},
+{n:"1v1 Gates",s:["Dribbling","Defending"],m:["pair","group"],g:["cones"],su:"10x10 m grid with 4 small gates on the sides.",hw:"Attacker scores by dribbling through any gate. Defender wins the ball and scores through any gate. 1 minute rounds, swap roles.",pt:["Attack at speed, then change direction","Defender stays side-on and patient","Protect the ball with your body"],tg:["6 rounds","8 rounds, 2 touch limit","10 rounds, 1 minute each, keep score"]},
+{n:"Target Shooting",s:["Shooting"],m:["solo","pair","group"],g:["goal"],su:"Edge of the box with 6 balls. Mark the top corners.",hw:"Shoot at the corners, alternating sides and feet. Collect, reset, and repeat. Count goals in each corner.",pt:["Non-kicking foot beside the ball","Lock the ankle, hit through the center","Keep your head over the ball"],tg:["4 rounds of 6, aim for 12 goals","5 rounds of 6, both feet, aim for 15","6 rounds of 6, one touch to set up, aim for 18"]},
+{n:"Shoot After Dribble",s:["Shooting","Dribbling"],m:["solo","pair","group"],g:["goal","cones"],su:"Cones at 25 m and 15 m from goal.",hw:"Dribble around the first cone, accelerate to the second, and shoot. Walk back and repeat, alternating feet.",pt:["Push the ball ahead on your last touch","Pick your corner before you shoot","Stay balanced, don't lean back"],tg:["10 shots","15 shots, both feet","20 shots, shoot within 2 touches of the cone"]},
+{n:"Cross and Finish",s:["Shooting","Passing","First touch"],m:["group"],g:["goal"],su:"One server on the wing, one finisher at the penalty spot.",hw:"Server delivers a cross, finisher takes one touch or a volley. Swap every 5 balls.",pt:["Arrive late, timed to the ball","Attack the near post, read the bounce","Hit the target, then power"],tg:["10 crosses each","15 each, one touch finish","20 each, add a defender"]},
+{n:"Shadow Defending",s:["Defending","Speed & agility"],m:["pair"],g:["cones"],su:"10 m lane marked with cones.",hw:"Attacker dribbles slowly and changes direction. Defender backpedals side-on and mirrors, staying 1.5 m away. Swap every 45 seconds.",pt:["Low stance, weight on the balls of your feet","Never cross your feet","Force the attacker to one side"],tg:["6 rounds of 45 seconds","8 rounds, attacker moves faster","10 rounds, tackle on the coach's call"]},
+{n:"Jockey and Win It",s:["Defending"],m:["pair","group"],g:["cones"],su:"10x10 m grid. Attacker starts with the ball at one end.",hw:"Defender closes down quickly, then slows and jockeys. Win the ball cleanly and pass it to a target. 5 rounds each.",pt:["Close fast, then slow your last steps","Stay patient, wait for a heavy touch","Tackle when the ball is away from their foot"],tg:["5 rounds each","8 rounds each","10 rounds each, attacker can score through gates"]},
+{n:"Weak Foot Wall Passes",s:["Weak foot","Passing","First touch"],m:["solo"],g:["wall"],su:"3-4 m from a wall.",hw:"Use only your weaker foot to pass and control. If the ball goes wide, jog and reset.",pt:["Plant your strong foot next to the ball","Slow down. Clean contact first","Aim for one spot on the wall"],tg:["3 sets of 15","3 sets of 25","3 sets of 30, alternate inside and laces"]},
+{n:"Weak Foot Dribble Lane",s:["Weak foot","Dribbling"],m:["solo","pair","group"],g:["cones"],su:"15 m lane, cones every 3 m.",hw:"Dribble down using only your weaker foot, weave around the cones, and come back the same way.",pt:["Keep touches small","Look up at every cone","Use inside, outside, and sole"],tg:["6 runs","8 runs, keep it under 15 seconds","10 runs, then take a shot with your weak foot"]},
+{n:"Cone Shuttle Runs",s:["Speed & agility","Stamina"],m:["solo","pair","group"],g:["cones"],su:"Cones at 5, 10, and 15 m.",hw:"Sprint to the first cone and back, then the second, then the third. Rest 60 seconds between rounds.",pt:["Drive with your arms","Plant, turn, push off the outside foot","Stay low through the turn"],tg:["4 rounds","6 rounds, under 25 seconds each","8 rounds, under 22 seconds each"]},
+{n:"Sprint and Dribble Intervals",s:["Speed & agility","Dribbling","Stamina"],m:["solo","pair","group"],g:["cones"],su:"Two cones 25 m apart.",hw:"Sprint without the ball one way and dribble back at full speed. Rest 45 seconds after each lap.",pt:["Push the ball two strides ahead","Head up on the sprint","Slow down only to turn"],tg:["6 laps","8 laps","10 laps with a quick turn at each end"]},
+{n:"30/30 Interval Runs",s:["Stamina"],m:["solo","pair","group"],g:[],su:"Open space or a track.",hw:"Run hard for 30 seconds, jog easy for 30 seconds. Repeat without stopping.",pt:["Run at about 80% effort","Breathe in rhythm","Keep your form when tired"],tg:["8 rounds","12 rounds","16 rounds"]},
+{n:"Ball Work Circuit",s:["Stamina","Dribbling","First touch"],m:["solo"],g:["cones"],su:"4 cones in a square, 8 m apart.",hw:"Dribble the sides, juggle at one corner, sprint at another. Keep moving for 3 minutes, rest 1 minute.",pt:["Keep the ball moving, not the clock","Stay relaxed when your legs feel tired","Switch feet each lap"],tg:["3 rounds","4 rounds","5 rounds"]},
+{n:"Self-Toss Heading",s:["Heading"],m:["solo"],g:[],su:"Open space, one ball.",hw:"Toss the ball up and head it forward or up. Catch and repeat. Aim for a spot.",pt:["Hit the ball with your forehead","Eyes open, mouth shut, neck tight","Push forward with your whole body"],tg:["3 sets of 8","3 sets of 12","3 sets of 15 with a jump"]},
+{n:"Pair Heading",s:["Heading","Passing"],m:["pair","group"],g:[],su:"3 m apart, one ball.",hw:"Partner tosses underhand, you head it back to their hands. Switch every 10. Add a jump and distance as you improve.",pt:["Attack the ball, don't wait for it","Hit through the center","Land on both feet"],tg:["10 each","15 each, longer toss","20 each, jumping headers"]}
+];
+
+const GEAR=[["cones","Cones or markers"],["wall","A wall"],["goal","A goal"]];
+let st={focus:[],players:"solo",time:45,level:1,gear:["cones","wall","goal"]};
+try{Object.assign(st,JSON.parse(localStorage.getItem("soccerDrillPrefs")||"{}"))}catch(e){}
+const saveP=()=>{try{localStorage.setItem("soccerDrillPrefs",JSON.stringify(st))}catch(e){}};
+
+function chips(id,items,type,name,isSel,onTog){
+  $(id).innerHTML=items.map(([v,l])=>`<label class="chip"><input type="${type}" name="${name}" value="${v}" ${isSel(v)?"checked":""}><span>${l}</span></label>`).join("");
+  $(id).querySelectorAll("input").forEach(i=>i.onchange=()=>onTog(i));
+}
+chips("focus",FOCUS.map(f=>[f,f]),"checkbox","f",v=>st.focus.includes(v),i=>{st.focus=[...$("focus").querySelectorAll("input:checked")].map(x=>x.value);saveP()});
+chips("players",[["solo","Just me"],["pair","With a partner"],["group","Group (3+)"]],"radio","p",v=>st.players===v,i=>{st.players=i.value;saveP()});
+chips("time",[[30,"30 min"],[45,"45 min"],[60,"60 min"],[90,"90 min"]],"radio","t",v=>st.time==v,i=>{st.time=+i.value;saveP()});
+chips("level",LV.map((l,i)=>[i,l]),"radio","l",v=>st.level==v,i=>{st.level=+i.value;saveP()});
+chips("gear",GEAR,"checkbox","g",v=>st.gear.includes(v),i=>{st.gear=[...$("gear").querySelectorAll("input:checked")].map(x=>x.value);saveP()});
+
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const eligible=d=>d.m.includes(st.players)&&d.g.every(x=>st.gear.includes(x));
+let plan=[];
+
+function build(){
+  const main=st.time-12;
+  const count=Math.max(2,Math.min(6,Math.round(main/12)));
+  const pool=D.filter(eligible);
+  const foci=st.focus.length?shuffle(st.focus):shuffle(FOCUS);
+  const chosen=[];
+  let guard=0;
+  while(chosen.length<count&&guard++<60){
+    const f=foci[chosen.length%foci.length];
+    let c=shuffle(pool.filter(d=>d.s.includes(f)&&!chosen.includes(d)));
+    if(!c.length&&st.focus.length) c=shuffle(pool.filter(d=>d.s.some(s=>st.focus.includes(s))&&!chosen.includes(d)));
+    if(!c.length) c=shuffle(pool.filter(d=>!chosen.includes(d)));
+    if(!c.length)break;
+    chosen.push(c[0]);
+  }
+  const each=Math.floor(main/Math.max(chosen.length,1));
+  plan=chosen.map((d,i)=>({d,min:i===chosen.length-1?main-each*(chosen.length-1):each,done:false}));
+  render();
+}
+
+function swap(i){
+  const cur=plan.map(p=>p.d);
+  const f=st.focus.length?st.focus:FOCUS;
+  let c=shuffle(D.filter(d=>eligible(d)&&!cur.includes(d)&&d.s.some(s=>f.includes(s))));
+  if(!c.length)c=shuffle(D.filter(d=>eligible(d)&&!cur.includes(d)));
+  if(!c.length)return;
+  plan[i].d=c[0];plan[i].done=false;render();
+}
+
+function render(){
+  if(!plan.length){$("out").innerHTML='<div class="panel">No drills match that setup. Try adding gear or changing who is training.</div>';return}
+  let h=`<div class="drill warm"><div class="dh"><h3>Warm-up</h3><span class="min">6 min</span></div><p>Easy jog, leg swings, walking lunges, high knees, and 2 minutes of light ball touches. Finish with 3 short accelerations.</p></div>`;
+  plan.forEach((p,i)=>{
+    const d=p.d;
+    h+=`<div class="drill ${p.done?"done":""}"><div class="dh"><h3>${i+1}. ${d.n}</h3><span class="min">${p.min} min</span></div>
+    <div class="tags">${d.s.join(" · ")}</div>
+    <p><b>Setup:</b> ${d.su}</p><p><b>How:</b> ${d.hw}</p>
+    <p><b>Coaching points:</b></p><ul>${d.pt.map(x=>`<li>${x}</li>`).join("")}</ul>
+    <p><b>Your target (${LV[st.level]}):</b> ${d.tg[st.level]}</p>
+    <div class="dbtn"><button class="ghost" data-done="${i}">${p.done?"Undo":"Mark done"}</button><button class="ghost" data-swap="${i}">Swap drill</button></div></div>`;
+  });
+  h+=`<div class="drill warm"><div class="dh"><h3>Cool-down</h3><span class="min">6 min</span></div><p>Slow jog or walk, then hold each stretch for 30 seconds: calves, hamstrings, quads, hip flexors, and groin.</p></div>
+  <div class="actions"><button id="again">Build another session</button><button class="ghost" id="print">Print</button></div>`;
+  $("out").innerHTML=h;
+  $("out").querySelectorAll("[data-swap]").forEach(b=>b.onclick=()=>swap(+b.dataset.swap));
+  $("out").querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{const i=+b.dataset.done;plan[i].done=!plan[i].done;render()});
+  $("again").onclick=build;$("print").onclick=()=>window.print();
+}
+$("go").onclick=()=>{build();$("out").scrollIntoView({behavior:"smooth"})};
+</script>
+</body>
+</html>
