@@ -9,7 +9,7 @@
 <style>
 :root{--turf:#1f4d36;--turf2:#245a3f;--chalk:#f4f7f2;--bib:#ff7a1a;--ink:#10261b;--mute:#b8d3c1}
 *{box-sizing:border-box}
-body{margin:0;font:16px/1.5 Barlow,system-ui,sans-serif;color:var(--chalk);background:repeating-linear-gradient(90deg,var(--turf) 0 90px,var(--turf2) 90px 180px);min-height:100vh}
+body{margin:0;font:16px/1.5 Barlow,system-ui,sans-serif;color:var(--chalk);background:radial-gradient(ellipse at 50% -10%,rgba(255,255,215,.28),transparent 60%),repeating-linear-gradient(90deg,var(--turf) 0 90px,var(--turf2) 90px 180px);background-attachment:fixed;min-height:100vh}
 .wrap{max-width:900px;margin:0 auto;padding:26px 16px 70px}
 h1{font:700 3rem/1 "Barlow Condensed",sans-serif;margin:0 0 6px}
 .sub{color:var(--mute);margin:0 0 22px}
@@ -39,11 +39,28 @@ ul{margin:4px 0 8px 18px;padding:0}
 .dbtn{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
 .warm{border-style:dashed}
 @media print{body{background:#fff;color:#000}.panel,.actions,.dbtn{display:none}.drill{border-color:#000;background:#fff}.min,.drill b{color:#000}.tags{color:#333}}
+
+.wrap{position:relative;z-index:1}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% 50%,transparent 0 118px,rgba(244,247,242,.2) 118px 121px,transparent 121px),linear-gradient(rgba(244,247,242,.16),rgba(244,247,242,.16)) 50% 0/3px 100% no-repeat}
+.hero{display:flex;align-items:center;gap:16px;border-bottom:4px solid var(--chalk);margin-bottom:12px;padding-bottom:10px;overflow:hidden}
+.hero h1{margin:0}
+.ball{width:68px;height:68px;flex:none;animation:roll 1.6s cubic-bezier(.2,.7,.3,1) both}
+@keyframes roll{from{transform:translateX(70vw) rotate(900deg)}to{transform:none}}
+.panel,.drill{position:relative}
+.panel::before,.panel::after{content:"";position:absolute;width:30px;height:30px;border:3px solid var(--bib)}
+.panel::before{top:-3px;left:-3px;border-width:0 3px 3px 0;border-radius:0 0 100% 0}
+.panel::after{bottom:-3px;right:-3px;border-width:3px 0 0 3px;border-radius:100% 0 0 0}
+.drill:not(.warm){border-left:12px solid var(--bib)}
+.pill{display:inline-block;border:1.5px solid var(--mute);border-radius:99px;padding:0 10px;margin:0 6px 4px 0}
+.drill{transition:transform .15s}
+.drill:hover{transform:translateX(4px)}
+h2{border-bottom:2px dashed rgba(244,247,242,.35);padding-bottom:2px}
+@media(prefers-reduced-motion:reduce){.ball{animation:none}.drill{transition:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Soccer Drill Builder</h1>
+  <div class="hero"><svg class="ball" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#f4f7f2" stroke="#10261b" stroke-width="4"/><polygon points="50,30 69,44 62,66 38,66 31,44" fill="#10261b"/><path d="M50 30V8M69 44l21-8M62 66l13 18M38 66L25 84M31 44L10 36" stroke="#10261b" stroke-width="4" fill="none"/></svg><h1>Soccer Drill Builder</h1></div>
   <p class="sub">Pick what you want to improve and get a session built around it.</p>
 
   <section class="panel">
@@ -156,7 +173,7 @@ function render(){
   plan.forEach((p,i)=>{
     const d=p.d;
     h+=`<div class="drill ${p.done?"done":""}"><div class="dh"><h3>${i+1}. ${d.n}</h3><span class="min">${p.min} min</span></div>
-    <div class="tags">${d.s.join(" · ")}</div>
+    <div class="tags">${d.s.map(x=>`<span class="pill">${x}</span>`).join("")}</div>
     <p><b>Setup:</b> ${d.su}</p><p><b>How:</b> ${d.hw}</p>
     <p><b>Coaching points:</b></p><ul>${d.pt.map(x=>`<li>${x}</li>`).join("")}</ul>
     <p><b>Your target (${LV[st.level]}):</b> ${d.tg[st.level]}</p>
